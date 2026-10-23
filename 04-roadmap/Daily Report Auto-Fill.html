@@ -1,0 +1,769 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Daily Report Auto-Fill</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: dispatch-console split. The RouteLogic app on the left, a prototype control console on the right; stacks on narrow screens. */
+:root {
+  --bg: #eef2f0;
+  --surface: #ffffff;
+  --surface-2: #f6f8f7;
+  --ink: #15201d;
+  --muted: #5a6763;
+  --line: #d6dedb;
+  --accent: #0d6b63;
+  --accent-ink: #ffffff;
+  --accent-soft: #e0f0ee;
+  --attn: #a85106;
+  --attn-bg: #fdf0dc;
+  --edit: #2e58c9;
+  --edit-bg: #e7edfc;
+  --ok: #1b7a48;
+  --ok-bg: #e1f2e8;
+  --err: #b42318;
+  --shadow: 0 1px 2px rgba(15,30,25,.06), 0 4px 14px rgba(15,30,25,.06);
+  --scrim: rgba(12,20,18,.45);
+  --f-display: "Barlow Semi Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1412; --surface: #151d1a; --surface-2: #19231f; --ink: #e4ebe8; --muted: #95a39e;
+    --line: #26322e; --accent: #43b6a9; --accent-ink: #0d1412; --accent-soft: #15302c;
+    --attn: #f0a54a; --attn-bg: #36270f; --edit: #82a0f3; --edit-bg: #1a2546;
+    --ok: #5cc48b; --ok-bg: #12301f; --err: #f27c6e;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); --scrim: rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1412; --surface: #151d1a; --surface-2: #19231f; --ink: #e4ebe8; --muted: #95a39e;
+  --line: #26322e; --accent: #43b6a9; --accent-ink: #0d1412; --accent-soft: #15302c;
+  --attn: #f0a54a; --attn-bg: #36270f; --edit: #82a0f3; --edit-bg: #1a2546;
+  --ok: #5cc48b; --ok-bg: #12301f; --err: #f27c6e;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); --scrim: rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 15px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--f-mono); font-size: .86em; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+.page { max-width: 1360px; margin: 0 auto; padding-block: 18px 40px; display: flex; flex-direction: column; gap: 14px; }
+
+/* Harness bar */
+.harness { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.harness h1 { font-family: var(--f-display); font-weight: 700; font-size: 1.45rem; letter-spacing: .2px; margin: 0; text-wrap: balance; }
+.harness .tag { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: .88rem; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+.split { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+@media (max-width: 1040px) { .split { grid-template-columns: minmax(0, 1fr); } }
+
+/* App frame */
+.app { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); min-width: 0; display: flex; flex-direction: column; position: relative; }
+.appbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; padding: 10px 18px; border-bottom: 1px solid var(--line); }
+.wordmark { font-family: var(--f-display); font-weight: 700; font-size: 1.15rem; letter-spacing: .3px; display: flex; align-items: center; gap: 8px; }
+.wordmark i { width: 22px; height: 22px; border-radius: 5px; background: var(--accent); position: relative; display: inline-block; }
+.wordmark i::after { content: ""; position: absolute; left: 5px; right: 5px; top: 10px; height: 2px; background: var(--accent-ink); box-shadow: 0 -5px 0 var(--accent-ink), 0 5px 0 var(--accent-ink); border-radius: 2px; }
+.nav { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .88rem; color: var(--muted); }
+.nav span.on { color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }
+.appbody { padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+.rhead { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 16px; align-items: flex-end; }
+.rhead h2 { font-family: var(--f-display); font-size: 1.6rem; margin: 0; line-height: 1.1; }
+.rhead .sub { color: var(--muted); font-size: .9rem; }
+.shiftchip { display: inline-flex; gap: 8px; align-items: center; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: .86rem; }
+.shiftchip b { font-weight: 600; }
+
+.summary { display: flex; flex-direction: column; gap: 8px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.summary .line { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; justify-content: space-between; }
+.summary .big { font-weight: 600; font-size: 1rem; }
+.summary .big em { font-style: normal; color: var(--attn); }
+.summary .big em.ok { color: var(--ok); }
+.bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.bar .f { background: var(--accent); }
+.bar .a { background: var(--attn); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: .78rem; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; background: var(--c); vertical-align: 0; }
+
+.banner { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; border-radius: 10px; padding: 10px 14px; font-size: .9rem; }
+.banner.warn { background: var(--attn-bg); color: var(--ink); border: 1px solid color-mix(in srgb, var(--attn) 40%, transparent); }
+.banner.info { background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.banner .acts { display: flex; gap: 8px; }
+
+.group { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.group > h3 { margin: 0; padding: 9px 14px; font-size: .74rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; }
+.group.attn > h3 { color: var(--attn); background: var(--attn-bg); }
+.group > h3 small { font-size: inherit; letter-spacing: inherit; text-transform: none; font-weight: 500; }
+
+.field { display: grid; grid-template-columns: minmax(0, 210px) minmax(0, 1fr); grid-template-areas: "lab ctl" "lab meta"; gap: 4px 16px; padding: 10px 14px; border-top: 1px solid var(--line); position: relative; }
+.group > h3 + .field { border-top: 0; }
+.field::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: transparent; }
+.field.s-attention { background: color-mix(in srgb, var(--attn-bg) 70%, var(--surface)); }
+.field.s-attention::before, .field.s-conflict::before { background: var(--attn); }
+.field.s-conflict { background: color-mix(in srgb, var(--attn-bg) 70%, var(--surface)); }
+.field.s-edited::before { background: var(--edit); }
+.field.s-error::before { background: var(--err); }
+@media (max-width: 640px) { .field { grid-template-columns: minmax(0,1fr); grid-template-areas: "lab" "ctl" "meta"; } }
+.lab { grid-area: lab; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; padding-top: 6px; }
+.lab label { font-weight: 500; font-size: .92rem; }
+.req { color: var(--err); margin-left: 3px; }
+.pill { font-size: .7rem; font-weight: 600; letter-spacing: .03em; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.pill.p-attention, .pill.p-conflict { background: var(--attn-bg); color: var(--attn); border-color: transparent; }
+.pill.p-edited { background: var(--edit-bg); color: var(--edit); border-color: transparent; }
+.pill.p-error { background: transparent; color: var(--err); border-color: var(--err); }
+.ctl { grid-area: ctl; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
+.inp { display: inline-flex; align-items: center; border: 1px solid var(--line); background: var(--surface); border-radius: 7px; max-width: 100%; }
+.inp:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.inp input { border: 0; background: transparent; padding: 7px 10px; width: 150px; max-width: 100%; outline: none; font-variant-numeric: tabular-nums; }
+.inp.wide input { width: 260px; }
+.inp .unit { padding-right: 10px; color: var(--muted); font-size: .82rem; }
+.s-error .inp { border-color: var(--err); }
+textarea { border: 1px solid var(--line); background: var(--surface); border-radius: 7px; padding: 8px 10px; width: 100%; max-width: 520px; min-height: 64px; resize: vertical; }
+.meta { grid-area: meta; font-size: .8rem; color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+.meta .src { transition: opacity .15s; }
+.field.s-filled .meta .src { opacity: 0; }
+.field.s-filled:hover .meta .src, .field.s-filled:focus-within .meta .src { opacity: 1; }
+@media (hover: none) { .field.s-filled .meta .src { opacity: 1; } }
+.meta .why { color: var(--attn); }
+.meta .bad { color: var(--err); font-weight: 500; }
+.meta .was { color: var(--edit); }
+.pick { border: 1px solid var(--attn); background: var(--surface); color: var(--ink); border-radius: 7px; padding: 6px 10px; cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; font-size: .9rem; }
+.pick b { font-variant-numeric: tabular-nums; }
+.pick small { color: var(--muted); font-size: .76rem; }
+.pick:hover { background: var(--attn-bg); }
+.or { font-size: .78rem; color: var(--muted); }
+
+.submitbar { position: sticky; bottom: 0; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(6px); border-top: 1px solid var(--line); padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; border-radius: 0 0 12px 12px; }
+.submitbar .hint { font-size: .86rem; color: var(--muted); min-width: 0; }
+.submitbar .hint b { color: var(--ink); font-weight: 600; }
+
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: .9rem; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; filter: none; }
+.btn.sm { padding: 5px 10px; font-size: .82rem; }
+
+/* Loading */
+.skel { display: flex; flex-direction: column; gap: 10px; }
+.skel i { display: block; height: 38px; border-radius: 8px; background: linear-gradient(90deg, var(--surface-2), var(--line), var(--surface-2)); background-size: 200% 100%; animation: sh 1.2s linear infinite; }
+@keyframes sh { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skel i { animation: none; } }
+.loadmsg { display: flex; gap: 10px; align-items: center; font-size: .92rem; color: var(--muted); }
+.srcs { display: flex; flex-wrap: wrap; gap: 6px; }
+.srcs span { font-family: var(--f-mono); font-size: .74rem; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
+
+/* Done */
+.done { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; padding: 8px 0 4px; }
+.done .tick { width: 44px; height: 44px; border-radius: 50%; background: var(--ok-bg); color: var(--ok); display: grid; place-items: center; font-size: 1.4rem; font-weight: 700; }
+.done h2 { margin: 0; font-family: var(--f-display); font-size: 1.7rem; }
+.stat { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; width: 100%; }
+.stat div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.stat b { display: block; font-family: var(--f-display); font-size: 1.5rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat span { font-size: .78rem; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Manager */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); background: var(--surface-2); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+.status { font-size: .76rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.st-ok { background: var(--ok-bg); color: var(--ok); }
+.st-wait { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.mbadge { display: inline-flex; gap: 5px; align-items: center; font-size: .74rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 999px; }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.kv div { padding: 8px 12px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; font-size: .86rem; }
+.kv div span { color: var(--muted); }
+.example { font-size: .74rem; color: var(--muted); }
+
+/* Console */
+.console { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel h4 { margin: 0; font-family: var(--f-display); font-size: 1.05rem; letter-spacing: .3px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.panel h4 small { font-family: var(--f-body); font-size: .72rem; font-weight: 400; color: var(--muted); }
+.ctrl { display: flex; flex-direction: column; gap: 4px; }
+.ctrl > label, .ctrl > .cl { font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+select { border: 1px solid var(--line); background: var(--surface); border-radius: 7px; padding: 7px 10px; width: 100%; }
+.radios { display: flex; flex-direction: column; gap: 4px; }
+.radios label { display: flex; gap: 8px; align-items: flex-start; font-size: .88rem; cursor: pointer; padding: 5px 6px; border-radius: 6px; }
+.radios label:hover { background: var(--surface-2); }
+.radios input { margin-top: 4px; accent-color: var(--accent); }
+.radios small { display: block; color: var(--muted); font-size: .76rem; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .9rem; }
+.switch button { width: 44px; height: 24px; border-radius: 12px; border: 0; background: var(--line); position: relative; cursor: pointer; flex-shrink: 0; }
+.switch button::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--surface); transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.switch button[aria-checked="true"] { background: var(--accent); }
+.switch button[aria-checked="true"]::after { left: 23px; }
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; background: none; padding: 6px 10px; cursor: pointer; font-size: .86rem; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow: auto; }
+.log li { font-family: var(--f-mono); font-size: .74rem; border-left: 2px solid var(--line); padding: 2px 0 2px 8px; overflow-wrap: anywhere; }
+.log li b { color: var(--accent); font-weight: 500; }
+.log li.fail b { color: var(--err); }
+.log time { color: var(--muted); margin-right: 6px; }
+.log code { display: block; color: var(--muted); }
+.empty { font-size: .84rem; color: var(--muted); }
+pre.json { margin: 0; font-family: var(--f-mono); font-size: .72rem; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow: auto; max-height: 300px; }
+.check { font-size: .82rem; color: var(--ok); font-weight: 500; }
+.audit { font-size: .76rem; }
+.audit th, .audit td { padding: 5px 6px; white-space: normal; }
+.audit td.ch { color: var(--edit); font-weight: 600; }
+
+/* Modal + toast */
+.scrim { position: fixed; inset: 0; background: var(--scrim); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.modal { background: var(--surface); border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shadow); width: min(480px, 100%); max-height: 86vh; overflow: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.modal h3 { margin: 0; font-family: var(--f-display); font-size: 1.35rem; }
+.modal ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: .9rem; }
+.modal h5 { margin: 0; font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.modal .acts { display: flex; justify-content: flex-end; gap: 8px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--surface); padding: 10px 16px; border-radius: 8px; font-size: .88rem; z-index: 60; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
+</style>
+
+<div class="page">
+  <div class="harness">
+    <div>
+      <div class="tag">RouteLogic Velocity · B2 prototype · simulated data</div>
+      <h1>Smart Daily Report Auto-Fill</h1>
+    </div>
+    <div class="seg" role="group" aria-label="View as">
+      <button id="v-coord" aria-pressed="true">Coordinator</button>
+      <button id="v-mgr" aria-pressed="false">Manager</button>
+    </div>
+  </div>
+
+  <div class="split">
+    <section class="app" aria-label="RouteLogic app">
+      <div class="appbar">
+        <div class="wordmark"><i aria-hidden="true"></i>RouteLogic</div>
+        <nav class="nav" id="nav" aria-label="App sections (static in prototype)"></nav>
+      </div>
+      <div id="screen"></div>
+    </section>
+
+    <aside class="console" aria-label="Prototype controls">
+      <div class="panel">
+        <h4>Scenario <small>prototype only</small></h4>
+        <div class="ctrl">
+          <label for="c-acct">Pilot account</label>
+          <select id="c-acct">
+            <option value="northstar">Northstar Freight</option>
+            <option value="lakeway">Lakeway Distribution</option>
+            <option value="prairie">Prairie Cold Chain</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label for="c-shift">Shift</label>
+          <select id="c-shift">
+            <option value="day">Day · 06:00–14:30</option>
+            <option value="night">Overnight · 22:00–06:30 (E1)</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <span class="cl" id="c-sc-l">Draft outcome</span>
+          <div class="radios" role="radiogroup" aria-labelledby="c-sc-l">
+            <label><input type="radio" name="sc" id="sc-normal" value="normal" checked><span>Typical draft<small>1 conflict, 1 ambiguous handoff, 1 unmapped field</small></span></label>
+            <label><input type="radio" name="sc" id="sc-clean" value="clean"><span>Clean draft<small>Nothing flagged · zero-friction submit</small></span></label>
+            <label><input type="radio" name="sc" id="sc-outage" value="outage"><span>Compliance source down<small>Partial fill, flagged as unavailable (E3)</small></span></label>
+            <label><input type="radio" name="sc" id="sc-fail" value="fail"><span>Draft times out<small>Falls back to the manual form (FR-8)</small></span></label>
+          </div>
+        </div>
+        <div class="switch">
+          <span>Auto-fill flag for this account</span>
+          <button id="c-flag" role="switch" aria-checked="true" aria-label="Auto-fill feature flag"></button>
+        </div>
+        <div class="row">
+          <button class="btn primary sm" id="c-open">Open daily report</button>
+          <button class="btn sm" id="c-stale">Simulate late-arriving records</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="tabs" role="tablist">
+          <button role="tab" id="t-events" aria-selected="true">Events</button>
+          <button role="tab" id="t-audit" aria-selected="false">Audit record</button>
+          <button role="tab" id="t-payload" aria-selected="false">Payload</button>
+        </div>
+        <div id="tabbody"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+<div id="overlay"></div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  const ACCOUNTS = {
+    northstar: { name: "Northstar Freight", coord: "Dana Ruiz", depot: "Blaine DC", next: ["M. Okafor", "J. Lindqvist"] },
+    lakeway: { name: "Lakeway Distribution", coord: "Marcus Bell", depot: "Eagan Cross-Dock", next: ["R. Haugen", "S. Delgado"] },
+    prairie: { name: "Prairie Cold Chain", coord: "Priya Nair", depot: "Shakopee Cold Store", next: ["T. Yang", "L. Brandt"] }
+  };
+
+  const state = {
+    view: "coord", tab: "events", flag: true, acct: "northstar", shift: "day", scenario: "normal",
+    screen: "loading", mode: "auto", fields: [], openedAt: 0, events: [], submission: null,
+    stale: null, staleDone: false, managerDetail: false, fallback: false
+  };
+
+  /* ---------- Field definitions: one mapping rule per field (FR-2) ---------- */
+  function defs() {
+    const a = ACCOUNTS[state.acct], night = state.shift === "night", sc = state.scenario;
+    const down = sc === "outage";
+    const cdown = { attention: true, reason: "Source unavailable: the compliance log didn't respond. Enter manually." };
+    const d = [
+      { k: "shift_start", label: "Shift start", sec: "Shift", type: "time", req: true, auto: night ? "22:00" : "06:00", src: "Timeclock TC-88213" },
+      { k: "shift_end", label: "Shift end", sec: "Shift", type: "time", req: true, auto: night ? "06:30" : "14:30", src: "Timeclock TC-88213" },
+      { k: "depot", label: "Depot", sec: "Shift", type: "text", req: true, auto: a.depot, src: "Coordinator assignment A-1147" },
+      { k: "routes_dispatched", label: "Routes dispatched", sec: "Dispatch", type: "int", req: true, auto: night ? 9 : 14, src: "Dispatch batch DB-4471" },
+      { k: "stops_completed", label: "Stops completed", sec: "Dispatch", type: "int", req: true, auto: night ? 131 : 212, src: "Dispatch batch DB-4471" },
+      { k: "stops_failed", label: "Stops failed", sec: "Dispatch", type: "int", req: true, auto: 3, src: "Dispatch exceptions DX-118" },
+      { k: "miles_driven", label: "Miles driven", sec: "Dispatch", type: "int", req: true, unit: "mi", auto: night ? 902 : 1486, src: "Route log RL-5520" },
+      { k: "on_time_pct", label: "On-time delivery", sec: "Dispatch", type: "pct", req: true, unit: "%", auto: "94.3", src: "Route log RL-5520" },
+      { k: "dvir_completed", label: "Vehicle inspections done", sec: "Compliance", type: "int", req: true, auto: night ? 9 : 14, src: "Compliance log CL-9032" },
+      { k: "hos_violations", label: "Hours-of-service violations", sec: "Compliance", type: "int", req: true, auto: 0, src: "Compliance log CL-9032 · source confirms zero" },
+      { k: "compliance_flags_open", label: "Open compliance flags", sec: "Compliance", type: "int", req: false, auto: 1, src: "Compliance log CL-9032" },
+      { k: "incidents_reported", label: "Incidents reported", sec: "Compliance", type: "int", req: true, auto: 0, src: "Incident register IR · source confirms zero" },
+      { k: "handoff_to", label: "Handed off to", sec: "Handoff", type: "text", req: true, auto: a.next[0], src: "Handoff note HN-3381" },
+      { k: "open_items_handed_off", label: "Open items handed off", sec: "Handoff", type: "int", req: false, auto: 2, src: "Handoff note HN-3381" },
+      { k: "fuel_gallons", label: "Fuel used", sec: "Fuel & time · feeds finance", type: "dec", req: true, unit: "gal", auto: night ? "128.6" : "211.4", src: "Fuel card batch FC-2207" },
+      { k: "overtime_hours", label: "Overtime", sec: "Fuel & time · feeds finance", type: "dec", req: true, unit: "h", auto: night ? "0.50" : "1.50", src: "Timeclock TC-88213" },
+      { k: "detention_hours", label: "Detention time", sec: "Fuel & time · feeds finance", type: "dec", req: false, unit: "h", auto: "0.75", src: "Gate log GL-0770" },
+      { k: "tolls_usd", label: "Tolls", sec: "Fuel & time · feeds finance", type: "dec", req: false, unit: "USD", auto: "46.75", src: "Toll transponder TT-640" },
+      { k: "shift_notes", label: "Shift notes", sec: "Notes", type: "note", req: false }
+    ];
+    const by = k => d.find(x => x.k === k);
+    if (sc === "normal") {
+      Object.assign(by("stops_completed"), { conflict: [{ v: night ? 131 : 212, src: "Dispatch batch DB-4471" }, { v: night ? 128 : 209, src: "Compliance log CL-9032" }], reason: "Dispatch and the compliance log disagree. Pick the correct count." });
+      Object.assign(by("handoff_to"), { attention: true, reason: "Two incoming coordinators are rostered (" + a.next.join(", ") + "). Enter who took the handoff." });
+      Object.assign(by("detention_hours"), { attention: true, reason: "No source is mapped to this field yet. Enter it or leave it blank." });
+    }
+    if (down) {
+      ["dvir_completed", "hos_violations", "compliance_flags_open", "incidents_reported"].forEach(k => Object.assign(by(k), cdown));
+      by("stops_completed").src = "Dispatch batch DB-4471 · only available source";
+      Object.assign(by("detention_hours"), { attention: true, reason: "No source is mapped to this field yet. Enter it or leave it blank." });
+    }
+    return d;
+  }
+
+  function buildFields(manual) {
+    state.fields = defs().map(d => {
+      const f = Object.assign({}, d);
+      if (manual || d.type === "note") { f.status = "manual"; f.value = ""; f.autoVal = null; f.flagged = false; }
+      else if (d.conflict) { f.status = "conflict"; f.value = ""; f.autoVal = null; f.flagged = true; }
+      else if (d.attention) { f.status = "attention"; f.value = ""; f.autoVal = null; f.flagged = true; }
+      else { f.status = "filled"; f.value = String(d.auto); f.autoVal = String(d.auto); f.flagged = false; }
+      f.edited = false; f.picked = null;
+      return f;
+    });
+  }
+
+  /* ---------- Validation: same rules as today's form (FR-5) ---------- */
+  function err(f) {
+    const v = f.value.trim();
+    if (!v) return "";
+    switch (f.type) {
+      case "int": return /^\d+$/.test(v) ? "" : "Enter a whole number, 0 or more.";
+      case "dec": return /^\d+(\.\d{1,2})?$/.test(v) ? "" : "Enter a number with up to 2 decimals.";
+      case "pct": return /^\d+(\.\d)?$/.test(v) && +v <= 100 ? "" : "Enter a percentage from 0 to 100.";
+      case "time": return /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? "" : "Use 24-hour time, like 06:00.";
+    }
+    return "";
+  }
+  const missing = f => f.req && !f.value.trim();
+  function stateOf(f) {
+    if (f.type === "note") return "manual";
+    if (err(f)) return "error";
+    if (state.mode === "manual") return f.value.trim() ? "entered" : "manual";
+    if (!f.value.trim() && f.status === "conflict") return "conflict";
+    if (!f.value.trim()) return "attention";
+    if (f.edited) return "edited";
+    return "filled";
+  }
+  const eligible = () => state.fields.filter(f => f.type !== "note");
+  const blockers = () => state.fields.filter(f => missing(f) || err(f));
+
+  /* ---------- Events (FR-10) ---------- */
+  function log(name, data, fail) {
+    const t = new Date();
+    state.events.unshift({ t: t.toTimeString().slice(0, 8), name, data, fail });
+    if (state.tab === "events") renderTab();
+  }
+
+  /* ---------- Screens ---------- */
+  const NAV = ["Dispatch", "Compliance", "Handoff", "Daily report"];
+  function renderNav() {
+    $("#nav").innerHTML = state.view === "coord"
+      ? NAV.map(n => '<span class="' + (n === "Daily report" ? "on" : "") + '">' + n + "</span>").join("")
+      : ["Reports", "Fleet", "Finance"].map(n => '<span class="' + (n === "Reports" ? "on" : "") + '">' + n + "</span>").join("");
+  }
+
+  function shiftLabel() {
+    return state.shift === "night"
+      ? "<b>Wed Oct 21 22:00 → Thu Oct 22 06:30</b> CDT · overnight"
+      : "<b>Thu Oct 22 · 06:00–14:30</b> CDT";
+  }
+  function reportHead(title) {
+    const a = ACCOUNTS[state.acct];
+    return '<div class="rhead"><div><h2>' + esc(title) + '</h2><div class="sub">' + esc(a.name) + " · " + esc(a.depot) + " · " + esc(a.coord) +
+      '</div></div><div class="shiftchip tnum">' + shiftLabel() + "</div></div>";
+  }
+
+  function render() {
+    renderNav();
+    const el = $("#screen");
+    if (state.view === "mgr") { el.innerHTML = managerView(); bindManager(); }
+    else if (state.screen === "loading") el.innerHTML = loadingView();
+    else if (state.screen === "review") { el.innerHTML = reviewView(); bindReview(); }
+    else if (state.screen === "submitted") { el.innerHTML = submittedView(); bindSubmitted(); }
+    else if (state.screen === "viewonly") { el.innerHTML = viewOnly(); bindSubmitted(); }
+    $("#c-stale").disabled = !(state.view === "coord" && state.screen === "review" && state.mode === "auto" && !state.stale && !state.staleDone);
+    renderTab();
+  }
+
+  function loadingView() {
+    return '<div class="appbody">' + reportHead("Daily report") +
+      '<div class="loadmsg" role="status"><span>Building your draft from today\'s records…</span></div>' +
+      '<div class="srcs"><span>Timeclock</span><span>Dispatch</span><span>Compliance log</span><span>Handoff notes</span><span>Fuel card</span></div>' +
+      '<div class="skel"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>';
+  }
+
+  function controlFor(f) {
+    const id = "f-" + f.k;
+    if (f.type === "note") return '<textarea id="' + id + '" data-k="' + f.k + '" placeholder="Anything managers should know about this shift">' + esc(f.value) + "</textarea>";
+    let picks = "";
+    if (state.mode === "auto" && f.status === "conflict" && !f.value.trim()) {
+      picks = f.conflict.map((o, i) => '<button class="pick" data-pick="' + f.k + '" data-i="' + i + '"><b>' + o.v + "</b><small>" + esc(o.src) + "</small></button>").join("") + '<span class="or">or type</span>';
+    }
+    const mode = f.type === "time" ? "numeric" : (f.type === "text" ? "text" : "decimal");
+    return picks + '<span class="inp' + (f.type === "text" ? " wide" : "") + '"><input id="' + id + '" data-k="' + f.k + '" inputmode="' + mode + '" autocomplete="off" value="' + esc(f.value) + '"' +
+      (f.type === "time" ? ' placeholder="HH:MM"' : "") + ">" + (f.unit ? '<span class="unit">' + esc(f.unit) + "</span>" : "") + "</span>";
+  }
+
+  const PILL = { filled: "Auto-filled", attention: "Needs attention", conflict: "Conflict", edited: "Edited", error: "Check value", manual: "", entered: "" };
+  function pillHtml(f) {
+    const s = stateOf(f);
+    if (f.type === "note") return state.mode === "auto" ? '<span class="pill">Manual</span>' : "";
+    return PILL[s] ? '<span class="pill p-' + s + '">' + PILL[s] + "</span>" : "";
+  }
+  function metaHtml(f) {
+    const s = stateOf(f), e = err(f);
+    if (e) return '<span class="bad">' + esc(e) + "</span>";
+    if (state.mode === "manual") return f.req && !f.value.trim() ? "Required" : "";
+    if (f.type === "note") return "Free-text notes aren't auto-filled in the pilot.";
+    if (s === "filled") return '<span class="src">Source: <span class="mono">' + esc(f.src) + "</span>" + (f.refreshed ? " · refreshed" : "") + "</span>";
+    if (s === "edited") {
+      if (f.picked) return '<span class="was">You picked ' + esc(f.value) + " from " + esc(f.picked) + ".</span>";
+      if (f.autoVal !== null) return '<span class="was">Auto-filled value was ' + esc(f.autoVal) + "</span> · <span class=\"mono\">" + esc(f.src) + "</span>";
+      return '<span class="was">Entered by you.</span>';
+    }
+    if (s === "attention") return '<span class="why">' + esc(f.flagged ? f.reason : "You cleared this field.") + "</span>" + (f.req ? " Required." : " Optional.");
+    if (s === "conflict") return '<span class="why">' + esc(f.reason) + "</span>";
+    return "";
+  }
+  function fieldRow(f) {
+    return '<div class="field s-' + stateOf(f) + '" id="row-' + f.k + '"><div class="lab"><label for="f-' + f.k + '">' + esc(f.label) +
+      (f.req ? '<span class="req" aria-label="required">*</span>' : "") + '</label><span class="pl">' + pillHtml(f) + '</span></div><div class="ctl">' +
+      controlFor(f) + '</div><div class="meta">' + metaHtml(f) + "</div></div>";
+  }
+
+  function reviewView() {
+    const flagged = state.fields.filter(f => f.flagged);
+    const rest = state.fields.filter(f => !f.flagged);
+    const secs = [];
+    rest.forEach(f => { let s = secs.find(x => x.name === f.sec); if (!s) secs.push(s = { name: f.sec, items: [] }); s.items.push(f); });
+    let html = '<div class="appbody">' + reportHead("Daily report");
+    if (state.fallback) html += '<div class="banner warn" role="alert"><span><b>Auto-fill unavailable.</b> Enter manually.</span></div>';
+    if (state.flagOffNote) html += '<div class="banner info"><span>Auto-fill was switched off for this account. You can still submit this draft; the next report opens as the manual form.</span></div>';
+    if (state.stale) html += '<div class="banner info" role="status"><span><b>' + state.stale.length + ' values updated</b> in the source records since this draft was built.</span><span class="acts"><button class="btn sm primary" id="stale-yes">Refresh</button><button class="btn sm" id="stale-no">Not now</button></span></div>';
+    html += '<div class="summary" id="summary"></div>';
+    if (state.mode === "auto" && flagged.length) {
+      html += '<div class="group attn"><h3><span>Needs attention</span><small id="attn-left"></small></h3>' + flagged.map(fieldRow).join("") + "</div>";
+    }
+    secs.forEach(s => { html += '<div class="group"><h3><span>' + esc(s.name) + "</span></h3>" + s.items.map(fieldRow).join("") + "</div>"; });
+    html += "</div>";
+    html += '<div class="submitbar"><div class="hint" id="hint"></div><button class="btn primary" id="submit">Submit report</button></div>';
+    return html;
+  }
+
+  function updateChrome() {
+    const el = eligible(), total = el.length;
+    const filled = el.filter(f => f.value.trim() && !err(f)).length;
+    const attn = state.mode === "auto" ? el.filter(f => ["attention", "conflict"].includes(stateOf(f))).length : 0;
+    const sum = $("#summary");
+    if (sum) {
+      const fPct = (filled / total) * 100, aPct = (attn / total) * 100;
+      const head = state.mode === "manual"
+        ? "<span class=\"big tnum\">" + filled + " of " + total + " fields entered</span>"
+        : '<span class="big tnum">' + filled + " of " + total + " filled · " + (attn ? "<em>" + attn + " need" + (attn === 1 ? "s" : "") + " attention</em>" : '<em class="ok">ready to submit</em>') + "</span>";
+      const edits = state.fields.filter(f => f.edited && f.autoVal !== null).length;
+      sum.innerHTML = '<div class="line">' + head + '<span class="legend"><span style="--c:var(--accent)">Filled</span>' +
+        (state.mode === "auto" ? '<span style="--c:var(--attn)">Needs attention</span><span>' + edits + " auto-filled value" + (edits === 1 ? "" : "s") + " edited</span>" : "") +
+        '</span></div><div class="bar" role="img" aria-label="' + filled + " of " + total + ' filled"><i class="f" style="width:' + fPct + '%"></i><i class="a" style="width:' + aPct + '%"></i></div>';
+    }
+    const left = $("#attn-left");
+    if (left) { const n = state.fields.filter(f => f.flagged && ["attention", "conflict", "error"].includes(stateOf(f))).length; left.textContent = n ? n + " left" : "All resolved"; }
+    const b = blockers(), btn = $("#submit"), hint = $("#hint");
+    if (btn) {
+      btn.disabled = b.length > 0;
+      hint.innerHTML = b.length
+        ? "<b>" + b.length + " required field" + (b.length === 1 ? "" : "s") + " to fix:</b> " + b.map(f => esc(f.label)).join(", ")
+        : "All required fields are valid. Submitting sends the report in today's format.";
+    }
+  }
+
+  function patchRow(f) {
+    const row = $("#row-" + f.k);
+    if (!row) return;
+    row.className = "field s-" + stateOf(f);
+    row.querySelector(".pl").innerHTML = pillHtml(f);
+    row.querySelector(".meta").innerHTML = metaHtml(f);
+  }
+
+  function bindReview() {
+    const sc = $("#screen");
+    sc.querySelectorAll("[data-pick]").forEach(b => b.addEventListener("click", () => {
+      const f = state.fields.find(x => x.k === b.dataset.pick), o = f.conflict[+b.dataset.i];
+      f.value = String(o.v); f.picked = o.src; f.edited = true;
+      log("field_edited", { field: f.k, action: "picked_conflict_value", value: o.v, source: o.src });
+      rerender();
+      const inp = $("#f-" + f.k); if (inp) inp.focus();
+    }));
+    const sy = $("#stale-yes"), sn = $("#stale-no");
+    if (sy) sy.addEventListener("click", applyStale);
+    if (sn) sn.addEventListener("click", () => { state.stale = null; state.staleDone = true; rerender(); });
+    $("#submit").addEventListener("click", trySubmit);
+    updateChrome();
+  }
+  function rerender() { const y = window.scrollY; render(); window.scrollTo(0, y); }
+
+  function onInput(e) {
+    const k = e.target.dataset && e.target.dataset.k; if (!k) return;
+    const f = state.fields.find(x => x.k === k);
+    f.value = e.target.value;
+    if (f.type !== "note") {
+      f.edited = f.autoVal !== null ? f.value.trim() !== f.autoVal : f.value.trim() !== "";
+      if (f.picked && f.value.trim() !== "") { const o = f.conflict.find(o => String(o.v) === f.value.trim()); f.picked = o ? o.src : null; }
+    }
+    patchRow(f); updateChrome(); if (state.tab !== "events") renderTab();
+  }
+  function onChange(e) {
+    const k = e.target.dataset && e.target.dataset.k; if (!k) return;
+    const f = state.fields.find(x => x.k === k);
+    if (f.type === "note") return;
+    log("field_edited", { field: k, from: f.autoVal, to: f.value.trim() || null });
+    if (f.status === "conflict" && !f.value.trim()) rerender();
+  }
+
+  function applyStale() {
+    let upd = [], kept = [];
+    state.stale.forEach(s => {
+      const f = state.fields.find(x => x.k === s.k);
+      if (f.edited) kept.push(f.label);
+      else { f.value = s.v; f.autoVal = s.v; f.src = s.src; f.refreshed = true; upd.push(f.label); }
+    });
+    log("draft_refreshed", { refreshed: upd, kept_user_edits: kept });
+    state.stale = null; state.staleDone = true;
+    rerender();
+    toast(upd.length + " value" + (upd.length === 1 ? "" : "s") + " refreshed" + (kept.length ? ". Kept your edit on " + kept.join(", ") + "." : "."));
+  }
+
+  /* ---------- Submit (FR-4, FR-6) ---------- */
+  function editsList() {
+    return state.fields.filter(f => f.type !== "note" && f.edited).map(f =>
+      f.autoVal !== null ? esc(f.label) + ": " + esc(f.autoVal) + " → <b>" + esc(f.value.trim()) + "</b>" : esc(f.label) + ": entered <b>" + esc(f.value.trim()) + "</b>");
+  }
+  function blanksList() { return eligible().filter(f => !f.req && !f.value.trim()).map(f => esc(f.label)); }
+
+  function trySubmit() {
+    if (blockers().length) return;
+    if (state.mode === "manual") return doSubmit();
+    const ed = editsList(), bl = blanksList();
+    if (!ed.length && !bl.length) return doSubmit();
+    $("#overlay").innerHTML = '<div class="scrim" id="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-t"><h3 id="m-t">Submit this report?</h3>' +
+      (ed.length ? "<div><h5>You changed " + ed.length + "</h5><ul><li>" + ed.join("</li><li>") + "</li></ul></div>" : "") +
+      (bl.length ? "<div><h5>Left blank (optional)</h5><ul><li>" + bl.join("</li><li>") + "</li></ul></div>" : "") +
+      '<div class="acts"><button class="btn" id="m-back">Back</button><button class="btn primary" id="m-ok">Confirm and submit</button></div></div></div>';
+    $("#m-ok").focus();
+    $("#m-back").addEventListener("click", closeModal);
+    $("#m-ok").addEventListener("click", () => { closeModal(); doSubmit(); });
+    $("#scrim").addEventListener("click", e => { if (e.target.id === "scrim") closeModal(); });
+  }
+  function closeModal() { $("#overlay").innerHTML = ""; }
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+  function payload() {
+    const p = {};
+    state.fields.forEach(f => {
+      const v = f.value.trim();
+      p[f.k] = !v ? null : (["int", "dec", "pct"].includes(f.type) ? Number(v) : v);
+    });
+    return p;
+  }
+
+  function doSubmit() {
+    const secs = Math.max(1, Math.round((Date.now() - state.openedAt) / 1000));
+    const auto = state.mode === "auto";
+    state.submission = {
+      secs, auto, at: new Date(), payload: payload(),
+      meta: auto ? { autofilled: true, reviewed_by: ACCOUNTS[state.acct].coord } : null,
+      edited: state.fields.filter(f => f.edited && f.autoVal !== null).length,
+      flagged: state.fields.filter(f => f.flagged).length,
+      audit: state.fields.filter(f => f.type !== "note").map(f => ({ k: f.k, label: f.label, auto: f.autoVal, sub: f.value.trim() || null, src: f.autoVal !== null ? f.src : (f.picked || null) }))
+    };
+    log("report_submitted", { duration_s: secs, autofill: auto, edited_autofilled_fields: state.submission.edited, flagged_fields: state.submission.flagged });
+    state.screen = "submitted"; state.flagOffNote = false;
+    render(); window.scrollTo(0, 0);
+  }
+
+  const fmtDur = s => s < 60 ? s + "s" : Math.floor(s / 60) + "m " + (s % 60) + "s";
+  function submittedView() {
+    const s = state.submission;
+    return '<div class="appbody"><div class="done"><div class="tick" aria-hidden="true">✓</div><div><h2>Report submitted</h2><div class="sub">Submitted in ' + fmtDur(s.secs) +
+      ". Sent to the daily-report endpoint in today's format, so manager and finance reports are unchanged.</div></div>" +
+      '<div class="stat"><div><b>' + fmtDur(s.secs) + '</b><span>Time to submit</span></div><div><b>6m 12s</b><span>Pre-pilot baseline (example)</span></div><div><b>' +
+      (s.auto ? s.edited : "–") + '</b><span>Auto-filled values edited</span></div><div><b>' + (s.auto ? "Yes" : "No") + '</b><span>Auto-filled & reviewed</span></div></div>' +
+      '<div class="row"><button class="btn primary" id="go-mgr">See it as a manager</button><button class="btn" id="reopen">Reopen today\'s report</button><button class="btn" id="next">Start a new shift</button></div></div></div>';
+  }
+  function viewOnly() {
+    const s = state.submission;
+    const rows = state.fields.filter(f => f.type !== "note").map(f => "<div><span>" + esc(f.label) + '</span><b class="tnum">' + esc(s.payload[f.k] == null ? "—" : s.payload[f.k]) + "</b></div>").join("");
+    return '<div class="appbody">' + reportHead("Daily report · submitted") +
+      '<div class="banner info"><span>This report was already submitted. It opens read-only, with no auto-fill (E11). Changes go through the existing amend flow.</span></div><div class="kv">' + rows +
+      '</div><div class="row"><button class="btn" id="next">Start a new shift</button></div></div>';
+  }
+  function bindSubmitted() {
+    const g = $("#go-mgr"), r = $("#reopen"), n = $("#next");
+    if (g) g.addEventListener("click", () => setView("mgr"));
+    if (r) r.addEventListener("click", () => { log("report_opened", { already_submitted: true, autofill: false }); state.screen = "viewonly"; render(); });
+    if (n) n.addEventListener("click", () => openReport(false));
+  }
+
+  /* ---------- Manager view (US-6, US-7) ---------- */
+  function managerView() {
+    const a = ACCOUNTS[state.acct], s = state.submission;
+    const t = d => d.toTimeString().slice(0, 5);
+    const ours = '<tr><td>' + esc(a.coord) + "</td><td>" + esc(a.depot) + "</td><td>" + (state.shift === "night" ? "Overnight" : "Day") + "</td><td>" +
+      (s ? '<span class="status st-ok">Submitted</span>' : '<span class="status st-wait">Not submitted</span>') + '</td><td class="tnum">' + (s ? t(s.at) : "—") + "</td><td>" +
+      (s && s.auto ? '<span class="mbadge">Auto-filled · Reviewed by ' + esc(a.coord) + "</span>" : "") + "</td><td>" + (s ? '<button class="btn sm" id="m-view">' + (state.managerDetail ? "Hide" : "View") + "</button>" : "") + "</td></tr>";
+    const ex = [["Tom Hale", "North Loop Hub", "Overnight", "06:42"], ["Ana Ortiz", "Coon Rapids Yard", "Day", "14:51"], ["Lee Vang", "Maple Grove DC", "Day", null]];
+    const exRows = ex.map(r => "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td><td>" + r[2] + "</td><td>" + (r[3] ? '<span class="status st-ok">Submitted</span>' : '<span class="status st-wait">Not submitted</span>') +
+      '</td><td class="tnum">' + (r[3] || "—") + "</td><td></td><td></td></tr>").join("");
+    let detail = "";
+    if (s && state.managerDetail) {
+      detail = '<div class="kv">' + state.fields.filter(f => f.type !== "note").map(f => "<div><span>" + esc(f.label) + '</span><b class="tnum">' + esc(s.payload[f.k] == null ? "—" : s.payload[f.k]) + "</b></div>").join("") + "</div>";
+    }
+    return '<div class="appbody"><div class="rhead"><div><h2>Daily reports</h2><div class="sub">' + esc(a.name) + ' · Thu Oct 22 · existing manager view, layout unchanged</div></div></div>' +
+      '<div class="tablewrap"><table><thead><tr><th>Coordinator</th><th>Depot</th><th>Shift</th><th>Status</th><th>Submitted</th><th>Origin</th><th></th></tr></thead><tbody>' + ours + exRows + "</tbody></table></div>" +
+      '<div class="example">Rows other than ' + esc(a.coord) + "'s are example data. The badge is carried as metadata outside the report schema (FR-11).</div>" + detail + "</div>";
+  }
+  function bindManager() { const b = $("#m-view"); if (b) b.addEventListener("click", () => { state.managerDetail = !state.managerDetail; render(); }); }
+
+  /* ---------- Open report (FR-1, FR-8, FR-9) ---------- */
+  let timer = null;
+  function openReport(instant) {
+    clearTimeout(timer); closeModal();
+    state.submission = null; state.stale = null; state.staleDone = false; state.fallback = false; state.flagOffNote = false; state.managerDetail = false;
+    state.view = "coord"; syncViewButtons();
+    state.openedAt = Date.now();
+    if (!state.flag) {
+      log("report_opened", { account: state.acct, autofill: false, reason: "flag_off" });
+      state.mode = "manual"; buildFields(true); state.screen = "review"; render(); return;
+    }
+    log("report_opened", { account: state.acct, autofill: true, shift_window: state.shift === "night" ? "2026-10-21T22:00/2026-10-22T06:30 CDT" : "2026-10-22T06:00/14:30 CDT" });
+    const finish = () => {
+      if (state.scenario === "fail") {
+        log("autofill_failed", { reason: "timeout", after_ms: 5000 }, true);
+        state.mode = "manual"; state.fallback = true; buildFields(true);
+      } else {
+        state.mode = "auto"; buildFields(false);
+        const fl = state.fields.filter(f => f.flagged).length, fi = state.fields.filter(f => f.status === "filled").length;
+        log("autofill_completed", { latency_ms: instant ? 1240 : 900 + Math.round(Math.random() * 1300), filled: fi, flagged: fl });
+      }
+      state.screen = "review"; render();
+    };
+    if (instant) return finish();
+    state.screen = "loading"; render();
+    timer = setTimeout(finish, state.scenario === "fail" ? 2600 : 1300);
+  }
+
+  /* ---------- Console ---------- */
+  function renderTab() {
+    const tb = $("#tabbody");
+    ["events", "audit", "payload"].forEach(t => $("#t-" + t).setAttribute("aria-selected", String(state.tab === t)));
+    if (state.tab === "events") {
+      tb.innerHTML = state.events.length ? '<ul class="log">' + state.events.map(e => '<li class="' + (e.fail ? "fail" : "") + '"><time>' + e.t + "</time><b>" + esc(e.name) + "</b><code>" + esc(JSON.stringify(e.data)) + "</code></li>").join("") + "</ul>"
+        : '<p class="empty">Events appear here as you use the report.</p>';
+    } else if (state.tab === "audit") {
+      const s = state.submission;
+      const rows = s ? s.audit : state.fields.filter(f => f.type !== "note").map(f => ({ label: f.label, auto: f.autoVal, sub: f.value.trim() || null, src: f.autoVal !== null ? f.src : (f.picked || null) }));
+      tb.innerHTML = '<p class="empty">' + (s ? "Stored per field at submit, separate from the report payload (FR-7)." : "Live preview. Stored per field when the report is submitted (FR-7).") +
+        '</p><div class="tablewrap"><table class="audit"><thead><tr><th>Field</th><th>Auto-filled</th><th>' + (s ? "Submitted" : "Current") + "</th><th>Source</th></tr></thead><tbody>" +
+        rows.map(r => "<tr><td>" + esc(r.label) + '</td><td class="tnum">' + esc(r.auto == null ? "—" : r.auto) + '</td><td class="tnum' + (r.auto !== r.sub ? " ch" : "") + '">' + esc(r.sub == null ? "—" : r.sub) + '</td><td class="mono">' + esc(r.src || "—") + "</td></tr>").join("") + "</tbody></table></div>";
+    } else {
+      const s = state.submission, p = s ? s.payload : payload();
+      const n = Object.keys(p).length;
+      tb.innerHTML = '<p class="empty">' + (s ? "Sent to the existing endpoint." : "What Submit will send. Same endpoint, same schema (FR-6).") + "</p>" +
+        '<div class="check">✓ Schema check: ' + n + " of " + n + " fields match today's report · 0 added · 0 renamed</div>" +
+        '<pre class="json">' + esc(JSON.stringify(p, null, 2)) + "</pre>" +
+        '<p class="empty">Metadata, stored outside the report schema (FR-11):</p><pre class="json">' + esc(JSON.stringify(s ? s.meta : (state.mode === "auto" ? { autofilled: true, reviewed_by: "(set on submit)" } : null), null, 2)) + "</pre>";
+    }
+  }
+
+  function toast(msg) {
+    const t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); t.textContent = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 3600);
+  }
+
+  function setView(v) { state.view = v; syncViewButtons(); render(); window.scrollTo(0, 0); }
+  function syncViewButtons() { $("#v-coord").setAttribute("aria-pressed", String(state.view === "coord")); $("#v-mgr").setAttribute("aria-pressed", String(state.view === "mgr")); }
+
+  $("#screen").addEventListener("input", e => { if (state.view === "coord" && state.screen === "review") onInput(e); });
+  $("#screen").addEventListener("change", e => { if (state.view === "coord" && state.screen === "review") onChange(e); });
+  $("#v-coord").addEventListener("click", () => setView("coord"));
+  $("#v-mgr").addEventListener("click", () => setView("mgr"));
+  ["events", "audit", "payload"].forEach(t => $("#t-" + t).addEventListener("click", () => { state.tab = t; renderTab(); }));
+  $("#c-acct").addEventListener("change", e => { state.acct = e.target.value; openReport(false); });
+  $("#c-shift").addEventListener("change", e => { state.shift = e.target.value; openReport(false); });
+  document.querySelectorAll('input[name="sc"]').forEach(r => r.addEventListener("change", e => { state.scenario = e.target.value; openReport(false); }));
+  $("#c-open").addEventListener("click", () => openReport(false));
+  $("#c-flag").addEventListener("click", () => {
+    state.flag = !state.flag;
+    $("#c-flag").setAttribute("aria-checked", String(state.flag));
+    log("config_changed", { account: state.acct, autofill_flag: state.flag });
+    if (!state.flag && state.view === "coord" && state.screen === "review" && state.mode === "auto") { state.flagOffNote = true; rerender(); }
+    else toast(state.flag ? "Auto-fill on. Takes effect the next time the report opens." : "Auto-fill off. The next report opens as the manual form.");
+  });
+  $("#c-stale").addEventListener("click", () => {
+    const night = state.shift === "night";
+    state.stale = [
+      { k: "stops_failed", v: "4", src: "Dispatch exceptions DX-118 · rev 2" },
+      { k: "fuel_gallons", v: night ? "134.2" : "218.9", src: "Fuel card batch FC-2207 · late swipe" }
+    ];
+    log("source_updated", { fields: state.stale.map(s => s.k) });
+    rerender();
+  });
+
+  openReport(true);
+})();
+</script>
+
+</body></html>
