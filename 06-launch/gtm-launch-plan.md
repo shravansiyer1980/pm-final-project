@@ -1,120 +1,85 @@
-# GTM Launch Plan · RouteLogic (B2B)
+# GTM Launch Plan - RouteLogic (B2B)
 
 | | |
 |---|---|
-| **Project path** | RouteLogic · B2B logistics |
-| **Feature** | B2 Smart Daily Report Auto-Fill (M4 PRD) |
+| **Project path** | RouteLogic, B2B logistics |
+| **Feature** | B2 Smart Daily Report Auto-Fill (from M4 PRD) |
 | **Goal** | Engagement |
 | **Launch tier** | M, Targeted |
 
 ## Goal & Audience
 **Goal:** Engagement. Get coordinators at existing customers to close every shift with the auto-filled daily report instead of re-typing it.
 
-**Why this goal:**
-- B2 isn't sold or discovered; it switches on inside a product the customer already pays for. The risk isn't that nobody hears about it. The risk is that coordinators keep re-keying out of habit, or stop trusting the draft after one wrong value.
-- The M2 research shows users already route around RouteLogic (*"We keep a WhatsApp group as the real system"*). Winning daily use back is the job.
-- The business outcome follows from that engagement: lower churn risk, including the enterprise account evaluating a leaner competitor (M2 synthesis).
+**Why this goal:** B2 isn't something we sell or that people need to find, it just turns on inside a product the customer already pays for. So the risk is not that nobody hears about it, its that coordinators keep re-keying out of habit or stop trusting the draft after one wrong value. M2 research already shows users working around RouteLogic ("We keep a WhatsApp group as the real system") so getting the daily use back is the job. Lower churn risk follows from that, including the enterprise account that's looking at a leaner competitor.
 
 **Target audience:**
-- **Primary:** coordinators and dispatchers at existing RouteLogic customer accounts who file the end-of-shift daily report. They are the M2 persona, and the M3 CSAT heatmap flags them on Scheduling and Compliance.
-- **Secondary:** the ops managers at those accounts who approve the rollout and consume the reports. They need to know that report format, timing and finance feeds are unchanged.
+- Primary - coordinators and dispatchers at existing accounts who file the end of shift daily report. This is the M2 persona and the M3 CSAT heatmap flags them on Scheduling and Compliance.
+- Secondary - ops managers at those accounts who approve the rollout and use the reports. They need to know report format, timing and finance feeds aren't changing.
 
 ## Launch Tier
-**M, Targeted.**
-- **Reach:** limited to existing customer accounts with coordinators who file daily reports. There's no net-new market and no prospects in scope.
-- **Revenue impact:** indirect but real. The feature protects renewals by removing a daily frustration, which matters most for the enterprise account evaluating a competitor.
-- **Risk of silence:** high inside accounts, low outside them. If the feature switches on unannounced, coordinators may distrust a pre-filled finance-bound report and keep re-typing. Managers may also escalate a "changed" report.
-- **Why not L:** press, events or paid channels would aim at prospects who can't use this feature yet, with a 4-person team carrying the launch.
-- **Why not S:** silence risks breaking trust in a report that feeds manager and finance reporting.
+M, Targeted.
+- Reach is limited to existing accounts with coordinators who file daily reports. No new market, no prospects.
+- Revenue impact is indirect but real - it protects renewals by taking away a daily frustration, which matters most for the enterprise account evaluating a competitor.
+- Risk of silence is high inside the accounts and low outside. If it turns on with no warning coordinators may not trust a pre-filled report that goes to finance and keep re-typing, and managers may escalate what looks like a changed report.
+- Not L because press, events or paid would go to prospects who cant use this yet, and its a 4 person team running the launch.
+- Not S because going silent risks breaking trust in a report that feeds manager and finance reporting.
 
-**Rollout, staged by cohort, gated on the M5 guardrails:**
-- **Cohort 1 (week 5):** the 3 pilot accounts go to 100%, plus the at-risk enterprise account and about 6 accounts with high report volume.
-- **Cohort 2 (week 6–7):** 50% of remaining accounts.
-- **Cohort 3 (week 8):** all accounts.
+**Rollout (staged by cohort, gated on the M5 guardrails):**
+- Cohort 1 (wk 5) - the 3 pilot accounts go to 100%, plus the at-risk enterprise account and ~6 high report volume accounts
+- Cohort 2 (wk 6-7) - half of the remaining accounts
+- Cohort 3 (wk 8) - all accounts
 
-A cohort only advances if the previous one had zero reporting discrepancies and on-time submission no more than 2 points below baseline. The per-account kill switch (PRD FR-9) stays live throughout.
+A cohort only moves forward if the previous one had zero reporting discrepancies and on-time submission no more than 2 pts below baseline. The per account kill switch stays on the whole time.
 
 ## Channels
-**1 · Owned: in-app guided first use.**
-- The first time a coordinator opens a pre-filled report, a 3-step walkthrough shows how to read "Needs attention," pick a conflict value, and submit.
-- The submitted screen shows "Submitted in 48s," so the time saved is visible every shift.
-- This channel is where the behavior happens, at the exact moment it matters.
+**1. Owned - in-app guided first use.** First time a coordinator opens a pre-filled report they get a 3 step walkthrough (reading Needs attention, picking a conflict value, submitting). The submitted screen shows "Submitted in 48s" so they see the time saved every shift. This is where the behavior actually happens so its the most important channel.
 
-**2 · Owned: CS-led account rollout.**
-- The CS Lead runs a 30-minute enablement call with each account's ops manager and lead coordinators before the account's flag turns on.
-- An admin email follows with the go-live date, a one-pager and the kill-switch contact.
-- B2B adoption runs through the account, not the individual user, and managers need to hear "your reports don't change" from a person.
+**2. Owned - CS led account rollout.** CS Lead does a 30 min enablement call with each account's ops manager and lead coordinators before the flag turns on, then an admin email with the go-live date, a one pager and who to contact to turn it off. In B2B adoption goes through the account not the individual user, and managers need to hear "your reports dont change" from a person.
 
-**3 · Earned: pilot coordinator champions.**
-- Coordinators at the 3 pilot accounts share before-and-after results: a quote and their time-to-submit change. These go into release notes, the one-pager and the enablement calls.
-- One champion joins each cohort's first enablement call.
-- Coordinators trust other coordinators more than a vendor claim, especially about a report that feeds finance.
+**3. Earned - pilot coordinator champions.** Coordinators at the 3 pilot accounts share a quote and how much their time to submit changed. These go in the release notes, one pager and enablement calls, and one champion joins each cohort's first call. Coordinators trust other coordinators more than the vendor, especially on something that feeds finance.
 
 **Enablement & assets:**
-- **Support:** an internal FAQ and troubleshooting guide covering fallback to the manual form, conflict fields, the flag being off, and late-arriving records. Support is briefed one week before Cohort 1 goes live.
-- **CS:** a rollout runbook with the per-account checklist, kill-switch procedure and guardrail dashboard link, plus a 10-slide enablement deck.
-- **Account management (at-risk enterprise account):** a short "what changed for your coordinators" brief with pilot numbers, used at the renewal conversation.
-- **Assets to build:**
-  - The in-app walkthrough (3 steps).
-  - A customer one-pager on what auto-fill does, what it never does, and what managers see.
-  - A 90-second demo video.
-  - Release notes.
-  - The admin go-live email template.
-  - A champion quote card for each pilot account.
+- Support - internal FAQ and troubleshooting guide (fallback to manual form, conflict fields, flag off, late records). Briefed one week before cohort 1.
+- CS - rollout runbook with per account checklist, kill switch steps and link to the guardrail dashboard, plus a short enablement deck (~10 slides).
+- Account management (at-risk account) - short brief on what changed for their coordinators with the pilot numbers, for the renewal conversation.
+- Assets to build - 3 step in-app walkthrough, customer one pager (what auto-fill does, what it never does, what managers see), 90 sec demo video, release notes, admin go-live email template, champion quote card for each pilot account.
 
 ## Ownership, Budget & Timeline
-**Ownership.** All owners are RouteLogic roles:
+**Ownership** (all RouteLogic roles):
 
 | Activity | Owner |
 |---|---|
-| GTM plan, cohort go/no-go, post-launch metrics and decision | RouteLogic Product Manager |
-| Feature flag cohorts, kill switch, guardrail monitoring (discrepancy monitor, contract tests) | RouteLogic Engineering Lead |
-| In-app walkthrough, telemetry for walkthrough completion | RouteLogic Engineer #2 |
-| Walkthrough design, one-pager, enablement deck, quote cards | RouteLogic Product Designer |
-| Enablement calls, admin emails, champion program, Support briefing, weekly guardrail check | RouteLogic CS Lead |
-| Renewal brief for the at-risk enterprise account | RouteLogic Account Executive for that account (outside the core team) |
+| GTM plan, cohort go/no-go, post-launch metrics and decision | Product Manager |
+| Feature flag cohorts, kill switch, guardrail monitoring | Engineering Lead |
+| In-app walkthrough and tracking for it | Engineer #2 |
+| Walkthrough design, one pager, enablement deck, quote cards | Product Designer |
+| Enablement calls, admin emails, champion program, support briefing, weekly guardrail check | CS Lead |
+| Renewal brief for the at-risk account | Account Executive for that account (outside the core team) |
 
-**Budget.** *These figures are assumptions; replace them with real numbers.*
+**Budget** (estimates, need to be replaced with real numbers):
 
-| Item | Assumed cost | Why |
+| Item | Cost | Why |
 |---|---|---|
-| 90-second demo video (freelance editor) | $4,000 | No video capability on the team |
-| Contract product-marketing writer (one-pager, release notes, email copy) | $3,000 | Asset gap: no product marketer on a PM + 2 eng + designer + CS team |
-| Champion thank-you (gift cards, 3 pilot accounts × ~3 coordinators × $100) | $900 | Recognition for quotes and call time |
-| Webinar/meeting tooling, in-app walkthrough | $0 | Existing tools; built in-house |
+| 90 sec demo video (freelance editor) | $4,000 | Nobody on the team does video |
+| Contract product marketing writer (one pager, release notes, emails) | $3,000 | No product marketer on the team |
+| Champion thank you gift cards (3 accounts x ~3 coordinators x $100) | $900 | For their quotes and time on calls |
+| Meeting tools, in-app walkthrough | $0 | Existing tools, built in-house |
 | **Total** | **~$7,900** | |
 
-**Asset gap to flag:** with no product marketer, the PM owns messaging. CS capacity is the main bottleneck, so cohort size is capped at what one CS Lead can enable in a week.
+No product marketer means I own the messaging. CS capacity is the main bottleneck so cohort size is capped at what one CS Lead can onboard in a week.
 
 **Timeline:**
-- **Phase 1, Beta (weeks 1–4):**
-  - The pilot runs on 3 accounts, with the M5 14-day experiment inside it.
-  - Collect champion quotes and before-and-after numbers.
-  - Build the walkthrough and assets in parallel.
-  - At the end of week 4, apply the M5 ship rule: SHIP, ITERATE or KILL.
-- **Phase 2, Launch (weeks 5–8):**
-  - Week 4: Support briefing.
-  - Week 5: Cohort 1 goes live, with enablement calls, admin emails and the walkthrough on.
-  - Weeks 6–7: Cohort 2.
-  - Week 8: Cohort 3 (all accounts) and public release notes.
-  - Each cohort advances only after a guardrail check.
-- **Phase 3, Post-launch (weeks 9–12):**
-  - Track weekly metrics and run the CS Lead's rubber-stamp audit (10 reports per account per week).
-  - Collect coordinator feedback.
-  - Make the post-launch decision in week 12.
+- Phase 1 Beta (wk 1-4) - pilot on 3 accounts with the 14 day M5 test inside it. Collect champion quotes and before/after numbers, build walkthrough and assets in parallel. End of wk 4 apply the M5 rule - ship, iterate or kill.
+- Phase 2 Launch (wk 5-8) - support briefing wk 4, cohort 1 wk 5 (enablement calls, admin emails, walkthrough on), cohort 2 wk 6-7, cohort 3 wk 8 (all accounts) plus public release notes. Each cohort only moves after a guardrail check.
+- Phase 3 Post-launch (wk 9-12) - track metrics weekly, CS Lead audits 10 reports per account per week, collect coordinator feedback, decision in wk 12.
 
 ## Success Metrics
-These metrics measure engagement, not reach.
+1. Reports submitted within 3 min - at least 35% across rolled out accounts, basically holding the M5 result at scale (baseline 20%, assumed)
+2. Habit retention - at least 90% of coordinators who used auto-fill in week 1 still using it in week 4 without asking to turn it off
+3. Edit rate - coordinators edit 5% or less of auto-filled fields. Low edits with clean audits means they accept the draft because its right.
 
-1. **Reports submitted within 3 minutes:** at least **35%** of daily reports across rolled-out accounts, holding the M5 result at scale (baseline 20%, assumed).
-2. **Week-4 retention of the new habit:** at least **90%** of coordinators who submitted via auto-fill in their first week are still doing so in their fourth week, without asking for the flag to be turned off.
-3. **Trust signal, edit rate:** coordinators edit **5% or fewer** of auto-filled fields. Low edits with passing audits means they accept the draft because it's right.
+Guardrails carried over from M5 - zero reporting discrepancies, on-time submission no more than 2 pts below baseline.
 
-**Guardrails held from M5:** zero downstream reporting discrepancies, and on-time submission no more than 2 points below baseline.
+**Bad signal to watch for:** submissions get faster but the weekly audit error rate goes above 1%. That would mean coordinators are rubber stamping without reviewing and the speed is coming from skipping checks, not saved work. The other one is fast submits while the account's WhatsApp group is still the real record - we fixed the report but not the workaround.
 
-**Bad signal to watch for:** submissions get faster but the weekly audit error rate rises above 1%. That means coordinators are rubber-stamping drafts without reviewing them, and the speed is coming from skipped checks, not saved work. A second bad signal is fast submits while the account's WhatsApp group stays the real record. That would mean the feature closed the report but not the workaround.
-
-**Most likely post-launch decision: double down.**
-- **Trigger:** all three metrics on target and guardrails clean through week 12.
-- **Action:** reuse the same rules-based pre-fill engine for B1 (One-Click Compliance Checklist) and B3 (Shift Handoff Wizard), the next steps on the coordinator's shift-close journey.
-- **Fallback:** if the edit rate sits between 5% and 10%, **iterate**: fix the most-flagged field mappings before expanding to B1.
+**Most likely post-launch decision - double down.** If all 3 metrics are on target and guardrails are clean through wk 12, reuse the same rules based pre-fill for B1 (One-Click Compliance Checklist), the next step in the coordinators shift close. If edit rate is between 5-10% then iterate - fix the most flagged field mappings first before moving on to B1.
